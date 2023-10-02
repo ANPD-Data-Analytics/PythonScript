@@ -1,6 +1,6 @@
-import os
+#import os
 
-sysUser511 =os.getlogin()
+#SsysUser511 =os.getlogin()
 #print (sysUser511)
 #print (os.getcwd() )
 #os.chdir("C:/Users/"+sysUser511+"/OneDrive - Abbott/LoginInfo")
