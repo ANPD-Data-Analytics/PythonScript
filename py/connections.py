@@ -3,9 +3,9 @@ import os
 sysUser511 =os.getlogin()
 #print (sysUser511)
 #print (os.getcwd() )
-#os.chdir("C:/Users/"+sysUser511+"/OneDrive - Abbott/LoginInfo")
+os.chdir("C:/Users/"+sysUser511+"/OneDrive - Abbott/LoginInfo")
 #
-#print (os.getcwd() )
+print (os.getcwd() )
 #try:
 #    with open("CDP_Connection_String.txt", "r") as file:
 #        cdp_con = file.read()
