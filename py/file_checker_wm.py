@@ -1,67 +1,45 @@
-import time
-import sys
-from ENV   import *
-#Assign variable for the Files with current date
-fnCal = 'WMCalendar_'+str(date.today())+'.csv.gz'
-fnFact = 'WMFact_'+str(date.today())+'.csv.gz'
-fnItem = 'WMItem_'+str(date.today())+'.csv.gz'
-fnStore = 'WMStore_'+str(date.today())+'.csv.gz'
-target_filenames = [fnCal,fnFact,fnItem,fnStore]
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+import smtplib
+from smtplib import SMTPException   
+from email.mime.text import MIMEText
+import logging
+from datetime import date
+#import the variables from connections file available in python package
+from py import connections
+b = connections
 
-#Setting Log File properties
-logging.basicConfig(filename='WMLog_'+str(date.today())+'.log',
-                    format='%(asctime)s %(message)s',
-                    filemode='w')
-logger.info("Start of the Script")
-while target_filenames:
-    # List all files in the source container
-    files = source_container_client.list_blobs()
-    counter = 0
-   
-    for file in files:
-    #Loop for all 4 available files.    
-        file_name = file.name
-        if file_name in target_filenames:
-            #List the files in Source and Destination directory
-            source_blob_client = source_container_client.get_blob_client(file_name) 
-            destination_blob_client = destination_container_client.get_blob_client(file_name)            
-            source_blob_properties = source_blob_client.get_blob_properties()
-            # Copy the matching file to the destination container
-            destination_blob_client.start_copy_from_url(source_blob_client.url, metadata=source_blob_properties.metadata)
-            print(f"File {file_name} copied to the destination container.")
-            logger.info(f"Successfully {file_name} copied to the destination container.")
-            # Remove the file from the list of target filenames
-            target_filenames.remove(file_name)
-            #Once all 4 files are transferred, delete the files from Source, Walmart's Container
-            source_blob_client.delete_blob()
-            
-    
-    if target_filenames:
-        for i in range(0,6):
-            i+=1
-        # Sleep for a while before checking again
-            print("Not all files found. Sleeping for 1 hour and retrying...")
-            logger.info(f"Retrying after 1 hour,Not all files found. No of Attempts: {i}. Total Attempts: 11")
-            time.sleep(3600)
-        if i>=5:
-            logger.info("Didn't received all Walmart Files, Sending email to the team to validate and escalate...")
-            send_email()
-            logger.error("Shutting down this Program. All attempts failed")
-            sys.exit(1)
-    else:
-        logger.info("All Source files found and copied to the destination container...")
-        logger.info("Sleeping for 30 sec and creating Trigger file.")
-        time.sleep(30)
-        trigger_file = 'trigger.txt'
-        file_content = ''
-        #Creating a trigger.txt file 
-        blob_trigger_file = destination_container_client.get_blob_client(trigger_file)
-        blob_trigger_file.upload_blob(file_content,overwrite=True)
-        print("Trigger File Successfully Created in Extract directory.")
-        logger.info("Trigger File Successfully Created in Extract directory...")
-        logger.info("Program completed successfully, Exiting...")
-        sys.exit(0)
-    logger.info("End of the Script")
+# Source Connection details
+account_name = b.shi_name
+account_key = b.shi_key
+source_container_name = "abbottwmextract"
+blob_service_client_source = BlobServiceClient(account_name, credential=account_key)
 
+# Define Azure Storage account connection string-CDP
+connection_string = b.cdp_con
+blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+destination_container_name = "anpd-mida-file-system\Raw_Data\Walmart_Retail\Extract"
 
+# Assign source and destination containers to variables
+source_container_client = blob_service_client_source.get_container_client(source_container_name)
+destination_container_client = blob_service_client.get_container_client(destination_container_name)
 
+#Email function - Send email to Data Analytics group
+def send_email():
+    sender = 'data.analytics@abbott.com'
+    message = """This is a test message - Walmart Files."""
+    text_subtype = 'plain'
+    msg = MIMEText(message, text_subtype)
+    msg['Subject']= 'Walmart files Not yet received. Please check'
+    msg['From']   = sender 
+    msg['To']   = 'data.analytics@abbott.com' #,daniel.shields@abbott.com, carly.goodman@abbott.com' 
+
+    try:
+        smtpObj = smtplib.SMTP('mail.abbott.com',25)
+        smtpObj.sendmail(sender, ['data.analytics@abbott.com'], msg.as_string())         
+        print("Successfully sent email")
+    except SMTPException:
+        pass
+
+#Logging Configuration
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
