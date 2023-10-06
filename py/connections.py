@@ -25,6 +25,6 @@ try:
         #print(shi_name)
 except FileNotFoundError:
     shi_name = None
-os.makedirs("C:/Users/"+sysUser511+"/Documents/Python Scripts11/log",exist_ok=True)
+os.makedirs("C:/Users/"+sysUser511+"/Documents/Python Scripts/log",exist_ok=True)
 os.chdir("C:/Users/"+sysUser511+"/Documents/Python Scripts")
 
