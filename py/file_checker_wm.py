@@ -65,7 +65,7 @@ while target_filenames:
                 print(i)
                 if i>=5:
                     logger.info("Didn't received all Walmart Files, Sending email to the team to validate and escalate...")
-                    #send_email()
+                    send_email()
                     logger.error("Shutting down this Program. All attempts failed")
                     sys.exit(0)
     else:
